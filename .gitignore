@@ -2,6 +2,9 @@
 /guyide
 /dist/
 
+# Untracked local dev builder
+/build.sh
+
 # Coverage / test output
 coverage.out
 coverage.html

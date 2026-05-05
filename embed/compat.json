@@ -1,0 +1,10 @@
+{
+  "_comment": "Stable channel compatibility matrix. Keys are guyide-cli versions; values pin per-component refs known to work together. The dev channel ignores this file and tracks main HEAD on every component.",
+  "schema": "guyide/compat/v1",
+  "versions": {
+    "v0.2.0": {
+      "nvguy": "v0.1.0",
+      "vscodium.nvim": "v0.1.0"
+    }
+  }
+}
