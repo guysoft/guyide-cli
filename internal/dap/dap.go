@@ -180,11 +180,21 @@ type ConfigSummary struct {
 // ListConfigs returns launch.json configs visible to nvim-launch.
 func (c *Client) ListConfigs() ([]ConfigSummary, error) {
 	const chunk = `return require("nvim-launch.debug-rpc").list_configs()`
-	var out []ConfigSummary
-	if err := c.luaJSON(chunk, nil, &out); err != nil {
+	var r struct {
+		Success bool            `json:"success"`
+		Error   string          `json:"error"`
+		Configs []ConfigSummary `json:"configs"`
+	}
+	if err := c.luaJSON(chunk, nil, &r); err != nil {
 		return nil, err
 	}
-	return out, nil
+	if !r.Success {
+		if r.Error != "" {
+			return nil, fmt.Errorf("debug list-configs: %s", r.Error)
+		}
+		return nil, fmt.Errorf("debug list-configs: unknown failure")
+	}
+	return r.Configs, nil
 }
 
 // rawState mirrors the Lua module's _state shape.
@@ -234,8 +244,14 @@ func (c *Client) State(withVars bool) (schema.DebugState, error) {
 }
 
 // topFrameVariables synchronously asks the active dap session for variables
-// in the top stack frame's first scope. Implemented inline because the Lua
-// module does not yet expose a get_locals helper.
+// in the top stack frame's first non-expensive scope. Implemented inline
+// because the Lua module does not yet expose a get_locals helper.
+//
+// debugpy returns scopes as [Locals, Globals]. Locals is non-expensive and
+// flat-contains user-defined names (a, b, ...) plus a synthetic "special
+// variables" sub-tree (__class__, __doc__, etc.). We pick the first
+// non-expensive scope and dereference all top-level variables in it. We do
+// NOT recurse into "special variables" — those are debugger internals.
 //
 // The chunk uses dap.session():request synchronously by stashing the result
 // in a global and busy-waiting up to 1.5s. This is intentionally simple for
@@ -274,11 +290,22 @@ s:request("stackTrace", { threadId = tid, startFrame = 0, levels = 1 }, function
       done = true
       return
     end
-    -- pick the first non-expensive scope
-    local target = resp2.scopes[1]
+    -- Prefer a scope explicitly named "Locals" (debugpy convention); fall
+    -- back to the first non-expensive scope. Adapter scope ordering is not
+    -- standardized so name-matching is the most robust signal.
+    local target = nil
     for _, sc in ipairs(resp2.scopes) do
-      if not sc.expensive then target = sc; break end
+      if sc.name == "Locals" or sc.name == "Local" then
+        target = sc
+        break
+      end
     end
+    if not target then
+      for _, sc in ipairs(resp2.scopes) do
+        if not sc.expensive then target = sc; break end
+      end
+    end
+    if not target then target = resp2.scopes[1] end
     get_vars(target.variablesReference)
   end)
 end)

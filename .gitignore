@@ -13,3 +13,12 @@ coverage.html
 .idea/
 .vscode/
 *.swp
+
+# Python e2e harness artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Allow our intentional test fixture launch.json
+!testdata/e2e/.vscode/
+!testdata/e2e/.vscode/launch.json

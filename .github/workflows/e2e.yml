@@ -1,0 +1,80 @@
+name: e2e
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+  schedule:
+    # Nightly run at 03:17 UTC to catch upstream regressions.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout guyide-cli
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          check-latest: true
+
+      - name: Install neovim (>= 0.10)
+        run: |
+          set -eux
+          # Use the official appimage for a known-good version on ubuntu.
+          curl -fsSL -o /tmp/nvim.appimage https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.appimage
+          chmod +x /tmp/nvim.appimage
+          (cd /tmp && ./nvim.appimage --appimage-extract >/dev/null)
+          sudo mv /tmp/squashfs-root /opt/nvim
+          sudo ln -sf /opt/nvim/AppRun /usr/local/bin/nvim
+          nvim --version | head -1
+
+      - name: Install tmux
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends tmux
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install python deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-timeout debugpy
+
+      - name: Build guyide
+        run: go build -o /tmp/guyide ./cmd/guyide
+
+      - name: Clone NvGuy
+        run: |
+          git clone --depth 1 https://github.com/guysoft/NvGuy.git /tmp/nvguy
+
+      - name: Run e2e
+        env:
+          GUYIDE_E2E_NVGUY_LOCAL: /tmp/nvguy
+        run: |
+          pytest -xvs testdata/e2e/
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-diagnostics
+          path: |
+            /tmp/pytest-of-runner/**/*.log
+            /tmp/pytest-of-runner/**/run-nvim.sh
+          if-no-files-found: ignore

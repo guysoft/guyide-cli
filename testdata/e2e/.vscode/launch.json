@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "sample-debugpy",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/sample.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}
