@@ -90,3 +90,22 @@ type WatchEvent struct {
 	Matched bool   `json:"matched,omitempty"`
 	Timeout bool   `json:"timeout,omitempty"`
 }
+
+// PaneInfo is one entry in `guyide tmux panes --json`.
+type PaneInfo struct {
+	ID      string `json:"id"`
+	Index   int    `json:"index"`
+	Title   string `json:"title,omitempty"`
+	Command string `json:"command,omitempty"`
+	Active  bool   `json:"active"`
+	Width   int    `json:"width,omitempty"`
+	Height  int    `json:"height,omitempty"`
+	Session string `json:"session,omitempty"`
+	Window  string `json:"window,omitempty"`
+}
+
+// PanesReport is emitted by `guyide tmux panes --json`.
+type PanesReport struct {
+	Envelope
+	Panes []PaneInfo `json:"panes"`
+}
