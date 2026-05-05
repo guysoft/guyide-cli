@@ -12,5 +12,6 @@ import (
 	_ "github.com/guysoft/guyide-cli/internal/components/editor"
 	// Multiplexer drivers.
 	_ "github.com/guysoft/guyide-cli/internal/components/multiplexer"
-	// Agent drivers will land here in M2 ckpt 5.
+	// Agent drivers.
+	_ "github.com/guysoft/guyide-cli/internal/components/agent"
 )

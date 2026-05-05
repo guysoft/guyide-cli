@@ -6,7 +6,8 @@
 package embed
 
 import (
-	_ "embed"
+	"embed"
+	"io/fs"
 
 	"github.com/guysoft/guyide-cli/internal/version"
 )
@@ -49,3 +50,23 @@ func TmuxGuyideConf() []byte { return tmuxConf }
 // TmuxManagedMarker is the second-line sentinel used to recognise a
 // guyide-owned ~/.tmux.conf during drift detection.
 const TmuxManagedMarker = "# guyide:managed v1"
+
+//go:embed all:opencode
+var opencodeFS embed.FS
+
+// OpenCodeSkillsFS returns the embedded ~/.config/opencode/skills/ tree
+// shipped by guyide. The returned fs is rooted at "opencode/skills";
+// callers should walk that prefix to discover skill subdirectories.
+func OpenCodeSkillsFS() fs.FS {
+	sub, err := fs.Sub(opencodeFS, "opencode/skills")
+	if err != nil {
+		// Should be unreachable; embed.FS guarantees the path exists.
+		panic(err)
+	}
+	return sub
+}
+
+// OpenCodeManagedMarker is the filename written inside each
+// guyide-managed opencode skill directory. Its presence tells the
+// driver "we own this dir; safe to update or remove".
+const OpenCodeManagedMarker = ".guyide-managed"
