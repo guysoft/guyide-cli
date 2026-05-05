@@ -5,7 +5,11 @@
 // the contents as read-only and parse them via the helpers exposed here.
 package embed
 
-import _ "embed"
+import (
+	_ "embed"
+
+	"github.com/guysoft/guyide-cli/internal/version"
+)
 
 //go:embed compat.json
 var compatJSON []byte
@@ -28,3 +32,8 @@ func SupportMatrixYAML() []byte { return supportMatrixYAML }
 // quick-start flow. The installer writes this to ~/.guyide/WELCOME.md
 // and opens it in nvim so new users learn the essential keybindings.
 func WelcomeMarkdown() []byte { return welcomeMD }
+
+// CLIVersion returns the build-time CLI version (proxy to the version
+// package). Lives here so installer code can resolve compat pins
+// without importing internal/version directly from leaf drivers.
+func CLIVersion() string { return version.Version }
