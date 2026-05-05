@@ -20,6 +20,9 @@ var supportMatrixYAML []byte
 //go:embed welcome/WELCOME.md
 var welcomeMD []byte
 
+//go:embed tmux/guyide.conf
+var tmuxConf []byte
+
 // CompatJSON returns the raw bytes of the compatibility matrix used by
 // the stable channel.
 func CompatJSON() []byte { return compatJSON }
@@ -37,3 +40,12 @@ func WelcomeMarkdown() []byte { return welcomeMD }
 // package). Lives here so installer code can resolve compat pins
 // without importing internal/version directly from leaf drivers.
 func CLIVersion() string { return version.Version }
+
+// TmuxGuyideConf returns the canonical tmux configuration that the
+// tmux driver writes to ~/.guyide/components/tmux/guyide.conf and
+// then symlinks/copies into ~/.tmux.conf.
+func TmuxGuyideConf() []byte { return tmuxConf }
+
+// TmuxManagedMarker is the second-line sentinel used to recognise a
+// guyide-owned ~/.tmux.conf during drift detection.
+const TmuxManagedMarker = "# guyide:managed v1"
