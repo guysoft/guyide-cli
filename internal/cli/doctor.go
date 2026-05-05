@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/guysoft/guyide-cli/internal/discover"
+	gnvim "github.com/guysoft/guyide-cli/internal/nvim"
 	"github.com/guysoft/guyide-cli/pkg/schema"
 	"github.com/spf13/cobra"
 )
@@ -48,6 +49,19 @@ func newDoctorCmd(g *Globals) *cobra.Command {
 				add("nvim", "socket discovered", "ok", env.Socket+" via "+env.SocketSource)
 				if env.NvimReachable {
 					add("nvim", "RPC reachable", "ok", "")
+					// Probe API info via msgpack-rpc to confirm the
+					// channel is fully usable, not just accepting
+					// connections.
+					if cli, err := gnvim.Dial(env.Socket); err == nil {
+						defer cli.Close()
+						if _, _, err := cli.APIInfo(); err == nil {
+							add("nvim", "API responsive", "ok", "")
+						} else {
+							add("nvim", "API responsive", "warn", err.Error())
+						}
+					} else {
+						add("nvim", "API responsive", "warn", err.Error())
+					}
 				} else {
 					add("nvim", "RPC reachable", "fail", "socket present but not accepting connections")
 				}

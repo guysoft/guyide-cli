@@ -1,8 +1,30 @@
 package cli
 
 import (
+	"errors"
+	"fmt"
+
+	gnvim "github.com/guysoft/guyide-cli/internal/nvim"
+	"github.com/guysoft/guyide-cli/internal/discover"
 	"github.com/spf13/cobra"
 )
+
+// resolveClient connects to nvim using the discovery cascade. Caller must
+// Close() on success.
+func resolveClient(g *Globals) (*gnvim.Client, string, error) {
+	env := discover.Resolve(discover.Options{
+		ExplicitSocket:  g.Socket,
+		ExplicitSession: g.Session,
+	})
+	if env.Socket == "" {
+		return nil, "", errors.New("no nvim socket discovered (set --socket or NVIM_IDE_SOCK)")
+	}
+	c, err := gnvim.Dial(env.Socket)
+	if err != nil {
+		return nil, env.Socket, err
+	}
+	return c, env.Socket, nil
+}
 
 func newNvimCmd(g *Globals) *cobra.Command {
 	c := &cobra.Command{
@@ -14,7 +36,35 @@ func newNvimCmd(g *Globals) *cobra.Command {
 		Short: "Report nvim reachability and basic info",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			out := writerFor(g)
-			out.Info("nvim status: not yet implemented (Phase 1 stub)")
+			cli, socket, err := resolveClient(g)
+			if err != nil {
+				out.Error("%s", err)
+				return err
+			}
+			defer cli.Close()
+			ch, ver, err := cli.APIInfo()
+			if err != nil {
+				out.Error("%s", err)
+				return err
+			}
+			if g.JSON {
+				out.JSON(map[string]any{
+					"schema":         "guyide/v1",
+					"level":          "info",
+					"socket":         socket,
+					"channel_id":     ch,
+					"api_version":    ver,
+					"reachable":      true,
+				})
+				return nil
+			}
+			out.Header("guyide nvim status")
+			out.KeyValue("socket", socket)
+			out.KeyValue("channel_id", fmt.Sprintf("%d", ch))
+			if v, ok := ver["major"]; ok {
+				out.KeyValue("api_major", fmt.Sprintf("%v", v))
+			}
+			out.Success("nvim reachable")
 			return nil
 		},
 	})
@@ -24,7 +74,27 @@ func newNvimCmd(g *Globals) *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := writerFor(g)
-			out.Info("nvim exec: not yet implemented (Phase 1 stub)")
+			cli, _, err := resolveClient(g)
+			if err != nil {
+				out.Error("%s", err)
+				return err
+			}
+			defer cli.Close()
+			vimcmd := joinArgs(args)
+			if err := cli.Command(vimcmd); err != nil {
+				out.Error("%s", err)
+				return err
+			}
+			if g.JSON {
+				out.JSON(map[string]any{
+					"schema": "guyide/v1",
+					"level":  "success",
+					"command": vimcmd,
+					"ok":     true,
+				})
+				return nil
+			}
+			out.Success("ran: %s", vimcmd)
 			return nil
 		},
 	})
@@ -34,9 +104,43 @@ func newNvimCmd(g *Globals) *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := writerFor(g)
-			out.Info("nvim eval: not yet implemented (Phase 1 stub)")
+			cli, _, err := resolveClient(g)
+			if err != nil {
+				out.Error("%s", err)
+				return err
+			}
+			defer cli.Close()
+			expr := joinArgs(args)
+			val, err := cli.Eval(expr)
+			if err != nil {
+				out.Error("%s", err)
+				return err
+			}
+			if g.JSON {
+				out.JSON(map[string]any{
+					"schema": "guyide/v1",
+					"level":  "info",
+					"expr":   expr,
+					"value":  val,
+				})
+				return nil
+			}
+			out.Header("guyide nvim eval")
+			out.KeyValue("expr", expr)
+			out.KeyValue("value", fmt.Sprintf("%v", val))
 			return nil
 		},
 	})
 	return c
+}
+
+func joinArgs(args []string) string {
+	out := ""
+	for i, a := range args {
+		if i > 0 {
+			out += " "
+		}
+		out += a
+	}
+	return out
 }

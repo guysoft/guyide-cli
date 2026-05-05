@@ -84,9 +84,21 @@ func Resolve(opts Options) schema.EnvInfo {
 	}
 	info.TmuxWindow = tmuxDisplay("#W")
 
-	// Probe reachability
+	// Probe reachability of the chosen socket. If the chosen socket came
+	// from flag/env/tmux but is stale (no longer accepting connections),
+	// fall back to the first reachable candidate from the scan.
 	if info.Socket != "" {
 		info.NvimReachable = pingSocket(info.Socket, 500*time.Millisecond)
+		if !info.NvimReachable && info.SocketSource != "scan" {
+			for _, cand := range candidates {
+				if pingSocket(cand, 500*time.Millisecond) {
+					info.Socket = cand
+					info.SocketSource = "scan"
+					info.NvimReachable = true
+					break
+				}
+			}
+		}
 	}
 
 	return info
