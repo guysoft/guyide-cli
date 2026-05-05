@@ -1,0 +1,15 @@
+# Build artifacts
+/guyide
+/dist/
+
+# Coverage / test output
+coverage.out
+coverage.html
+*.test
+*.out
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
