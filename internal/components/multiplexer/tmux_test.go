@@ -18,6 +18,7 @@ import (
 
 func newCtx(t *testing.T) *components.Context {
 	t.Helper()
+	t.Setenv("GUYIDE_SKIP_TPM_BOOTSTRAP", "1")
 	root := t.TempDir()
 	home := filepath.Join(root, "home")
 	guy := filepath.Join(home, ".guyide")

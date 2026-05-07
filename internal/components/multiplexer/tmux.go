@@ -135,12 +135,70 @@ func (d *TmuxDriver) Install(c *components.Context) error {
 		}
 	}
 
+	// Bootstrap TPM so plugin-based bindings (prefix-r reload, prefix-I
+	// install, resurrect/continuum, oasis theme) work out of the box.
+	// Tests can opt out by setting GUYIDE_SKIP_TPM_BOOTSTRAP=1.
+	if os.Getenv("GUYIDE_SKIP_TPM_BOOTSTRAP") == "" {
+		if err := d.bootstrapTPM(c); err != nil {
+			// Don't fail the install on plugin errors; user can prefix-I later.
+			fmt.Fprintf(os.Stderr, "tmux: TPM bootstrap warning: %v\n", err)
+		}
+	}
+
 	if d.reloadOnInstall(c) && tmuxRunning() {
 		// Best-effort reload: a missing tmux binary or no servers
 		// running shouldn't fail the install.
 		_ = exec.Command("tmux", "source-file", d.userConfPath(c)).Run()
 	}
 	return nil
+}
+
+// bootstrapTPM clones TPM into ~/.tmux/plugins/tpm if missing, then runs
+// the TPM install script so all plugins referenced in guyide.conf are
+// fetched. It is best-effort: a missing git or network failure should not
+// fail the wider install.
+func (d *TmuxDriver) bootstrapTPM(c *components.Context) error {
+	tpmDir := filepath.Join(c.HomeDir, ".tmux", "plugins", "tpm")
+	if _, err := os.Stat(filepath.Join(tpmDir, "tpm")); err == nil {
+		// TPM already installed; still run install_plugins to pick up
+		// any new entries in guyide.conf.
+		return runTPMInstall(tpmDir)
+	}
+	if err := os.MkdirAll(filepath.Dir(tpmDir), 0o755); err != nil {
+		return fmt.Errorf("mkdir tmux plugins: %w", err)
+	}
+	cmd := exec.Command("git", "clone", "--depth", "1",
+		"https://github.com/tmux-plugins/tpm", tpmDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(),
+		"GIT_TERMINAL_PROMPT=0",
+		"GCM_INTERACTIVE=Never",
+		"GIT_ASKPASS=",
+		"SSH_ASKPASS=",
+	)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("clone TPM: %w", err)
+	}
+	return runTPMInstall(tpmDir)
+}
+
+// runTPMInstall invokes TPM's install_plugins script to fetch all
+// plugins declared in the user's tmux.conf. Best-effort: returns the
+// error but caller treats it as a warning.
+func runTPMInstall(tpmDir string) error {
+	script := filepath.Join(tpmDir, "bin", "install_plugins")
+	if _, err := os.Stat(script); err != nil {
+		return nil // older TPM layouts; nothing to do.
+	}
+	cmd := exec.Command(script)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(),
+		"GIT_TERMINAL_PROMPT=0",
+		"GCM_INTERACTIVE=Never",
+	)
+	return cmd.Run()
 }
 
 func (d *TmuxDriver) Update(c *components.Context) error { return d.Install(c) }
