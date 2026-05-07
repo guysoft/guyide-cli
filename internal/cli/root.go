@@ -42,6 +42,9 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(newTmuxCmd(g))
 	root.AddCommand(newDebugCmd(g))
 	root.AddCommand(newLayoutCmd(g))
+	root.AddCommand(newInstallCmd(g))
+	root.AddCommand(newUninstallCmd(g))
+	root.AddCommand(newListBackupsCmd(g))
 
 	return root
 }

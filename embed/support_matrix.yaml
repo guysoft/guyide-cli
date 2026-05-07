@@ -1,0 +1,44 @@
+# GuyIDE supported component combinations.
+#
+# Each entry is one fully-supported (editor, multiplexer, agent) triple.
+# `guyide doctor` cross-checks the active config against this list and
+# refuses to run unsupported triples without --allow-unsupported.
+#
+# Drivers marked `status: stub` are recognised but return ErrNotImplemented;
+# they prove the swap mechanism without bloating v0.2.
+
+schema: guyide/support_matrix/v1
+
+drivers:
+  editor:
+    - name: nvim
+      status: supported
+      min_version: "0.10.0"
+      preferred: "0.11.4"
+      requires:
+        nvguy: ">=v0.1.0"
+        vscodium.nvim: ">=v0.1.0"
+  multiplexer:
+    - name: tmux
+      status: supported
+      min_version: "3.0"
+      preferred: "3.5a"
+  agent:
+    - name: opencode
+      status: supported
+    - name: claude-code
+      status: stub
+      planned: "v0.3.0"
+
+# Triples explicitly validated by CI. Anything not listed is unsupported.
+triples:
+  - editor: nvim
+    multiplexer: tmux
+    agent: opencode
+    status: supported
+    since: "v0.2.0"
+  - editor: nvim
+    multiplexer: tmux
+    agent: claude-code
+    status: stub
+    planned: "v0.3.0"
