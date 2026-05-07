@@ -381,6 +381,17 @@ func runCmd(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	if name == "git" {
+		// Refuse interactive credential prompts. NvGuy is a public repo, so
+		// any prompt indicates a misconfigured credential helper and we'd
+		// rather fail loudly than hang the installer.
+		cmd.Env = append(os.Environ(),
+			"GIT_TERMINAL_PROMPT=0",
+			"GCM_INTERACTIVE=Never",
+			"GIT_ASKPASS=",
+			"SSH_ASKPASS=",
+		)
+	}
 	return cmd.Run()
 }
 

@@ -40,13 +40,35 @@ This means a skill calling `guyide debug state` from a subshell *automatically*
 gets parseable JSON; a human running the same thing in their tmux pane sees
 panels and badges.
 
-## Install (Phase 1, in development)
+## Install
+
+### With Go (recommended for developers)
+
+If you have Go 1.23+ installed:
 
 ```sh
+# Latest released tag
 go install github.com/guysoft/guyide-cli/cmd/guyide@latest
+
+# Or follow the main branch (gets unreleased features)
+go install github.com/guysoft/guyide-cli/cmd/guyide@main
 ```
 
-Once v0.1.0 ships, Homebrew + tarball downloads will be available. macOS and
+The binary lands in `$(go env GOBIN)` (or `$(go env GOPATH)/bin`). Make sure
+that directory is on your `PATH`.
+
+### From an unmerged feature branch
+
+Branch names with slashes (e.g. `feature/installer`) are rejected by the Go
+module proxy. Use the commit SHA instead:
+
+```sh
+go install github.com/guysoft/guyide-cli/cmd/guyide@<commit-sha>
+```
+
+### Coming soon
+
+Once v0.1.0+ ships, Homebrew + tarball downloads will be available. macOS and
 Windows users may need to bypass Gatekeeper / SmartScreen on first run; signed
 releases are planned for Phase 2.
 
