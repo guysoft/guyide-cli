@@ -56,3 +56,39 @@ func TestUserConfigYAMLAndJSONRoundTrip(t *testing.T) {
 		t.Errorf("json roundtrip lost editor driver: %+v", fromJSON)
 	}
 }
+
+func TestClaudeCodeConfigYAMLRoundTrip(t *testing.T) {
+	input := `
+schema: guyide/config/v1
+channel: stable
+components:
+  editor:
+    driver: nvim
+  multiplexer:
+    driver: tmux
+  agent:
+    driver: claude-code
+claude-code:
+  cli: claude
+  extra_args:
+    - "--model"
+    - "opus"
+  skill_root: "~/.claude/skills"
+`
+	var cfg UserConfig
+	if err := yaml.Unmarshal([]byte(input), &cfg); err != nil {
+		t.Fatalf("yaml unmarshal: %v", err)
+	}
+	if cfg.Components.Agent.Driver != "claude-code" {
+		t.Errorf("agent driver = %q want claude-code", cfg.Components.Agent.Driver)
+	}
+	if cfg.ClaudeCode.CLI != "claude" {
+		t.Errorf("claude-code.cli = %q want claude", cfg.ClaudeCode.CLI)
+	}
+	if len(cfg.ClaudeCode.ExtraArgs) != 2 || cfg.ClaudeCode.ExtraArgs[1] != "opus" {
+		t.Errorf("claude-code.extra_args = %v", cfg.ClaudeCode.ExtraArgs)
+	}
+	if cfg.ClaudeCode.SkillRoot != "~/.claude/skills" {
+		t.Errorf("claude-code.skill_root = %q", cfg.ClaudeCode.SkillRoot)
+	}
+}

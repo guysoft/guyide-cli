@@ -27,8 +27,8 @@ drivers:
     - name: opencode
       status: supported
     - name: claude-code
-      status: stub
-      planned: "v0.3.0"
+      status: supported
+      since: "v0.3.0"
 
 # Triples explicitly validated by CI. Anything not listed is unsupported.
 triples:
@@ -40,5 +40,5 @@ triples:
   - editor: nvim
     multiplexer: tmux
     agent: claude-code
-    status: stub
-    planned: "v0.3.0"
+    status: supported
+    since: "v0.3.0"

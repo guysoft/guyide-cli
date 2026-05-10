@@ -50,6 +50,8 @@ GuyIDE just placed three things on your machine:
 
 All of it lives under `~/.guyide/` and can be removed with `guyide uninstall`.
 
+> **Want Claude Code instead?** Edit `~/.guyide/config.yaml` and change `agent: opencode` to `agent: claude-code`, then re-run `guyide install`.
+
 ---
 
 ## Next steps

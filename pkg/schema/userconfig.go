@@ -51,9 +51,11 @@ type OpenCodeConfig struct {
 	SkillRoot string `yaml:"skill_root,omitempty" json:"skill_root,omitempty"`
 }
 
-// ClaudeCodeConfig tunes the (stubbed) claude-code agent driver.
+// ClaudeCodeConfig tunes the claude-code agent driver.
 type ClaudeCodeConfig struct {
-	// Reserved for v0.3.
+	SkillRoot string   `yaml:"skill_root,omitempty" json:"skill_root,omitempty"` // default: ~/.claude/skills
+	CLI       string   `yaml:"cli,omitempty" json:"cli,omitempty"`               // executable name (default: "claude")
+	ExtraArgs []string `yaml:"extra_args,omitempty" json:"extra_args,omitempty"` // passthrough flags (e.g. ["--model", "opus"])
 }
 
 // DefaultUserConfig returns the config shipped on first install.

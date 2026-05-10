@@ -70,3 +70,21 @@ func OpenCodeSkillsFS() fs.FS {
 // guyide-managed opencode skill directory. Its presence tells the
 // driver "we own this dir; safe to update or remove".
 const OpenCodeManagedMarker = ".guyide-managed"
+
+//go:embed all:claude-code
+var claudeCodeFS embed.FS
+
+// ClaudeCodeSkillsFS returns the embedded ~/.claude/skills/ tree
+// shipped by guyide. The returned fs is rooted at "claude-code/skills";
+// callers should walk that prefix to discover skill subdirectories.
+func ClaudeCodeSkillsFS() fs.FS {
+	sub, err := fs.Sub(claudeCodeFS, "claude-code/skills")
+	if err != nil {
+		panic(err)
+	}
+	return sub
+}
+
+// ClaudeCodeManagedMarker is the filename written inside each
+// guyide-managed claude-code skill directory.
+const ClaudeCodeManagedMarker = ".guyide-managed"

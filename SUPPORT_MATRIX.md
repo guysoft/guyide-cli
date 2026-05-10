@@ -10,15 +10,15 @@ The authoritative machine-readable copy lives at `embed/support_matrix.yaml` and
 |---|---|---|---|
 | editor | `nvim` | supported | Requires NvGuy ≥ v0.1.0 and vscodium.nvim ≥ v0.1.0 |
 | multiplexer | `tmux` | supported | tmux ≥ 3.0; GuyIDE owns `~/.tmux.conf` |
-| agent | `opencode` | supported | Default agent for v0.2 |
-| agent | `claude-code` | stub | Recognised but `ErrNotImplemented`; full driver planned for v0.3 |
+| agent | `opencode` | supported | Default agent for v0.2+ |
+| agent | `claude-code` | supported | Supported since v0.3; uses `tmux-resurrect-claude-sessions` for session persistence |
 
 ## Validated triples
 
 | Editor | Multiplexer | Agent | Status | Since |
 |---|---|---|---|---|
 | nvim | tmux | opencode | supported | v0.2.0 |
-| nvim | tmux | claude-code | stub | planned v0.3.0 |
+| nvim | tmux | claude-code | supported | v0.3.0 |
 
 Anything not listed is unsupported. `guyide doctor` will refuse to mark such installs as ready unless invoked with `--allow-unsupported`, in which case it downgrades the failure to a warning.
 
