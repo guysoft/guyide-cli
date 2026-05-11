@@ -25,3 +25,4 @@ __pycache__/
 # Allow our intentional test fixture launch.json
 !testdata/e2e/.vscode/
 !testdata/e2e/.vscode/launch.json
+dist/
