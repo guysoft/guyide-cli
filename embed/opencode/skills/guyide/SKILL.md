@@ -69,6 +69,7 @@ Each driver block is only validated when its slot selects it; you can keep setti
 - **opencode not on PATH** — `guyide install` errors with the install URL. Install opencode separately, then re-run.
 - **tmux drift detected** — `~/.tmux.conf` exists but lacks the marker. guyide backs it up before replacing. The backup is in `~/.guyide/backups/`.
 - **NvGuy clone fails** — usually a transient git error; re-run `guyide install`. The clone is `git clone --depth 1 --branch <ref>` from `https://github.com/guysoft/NvGuy.git`.
+- **Wrong nvim instance** — when multiple nvim instances are running, the socket resolver may pick the wrong one. Every `nvim exec` and `nvim eval` response now includes `socket`, `buffer`, and `cwd` fields. **Always check these fields** to verify you are talking to the expected nvim. If the buffer or cwd looks wrong, re-run with `--socket /tmp/nvim-ide-<N>.sock` explicitly.
 
 ## Source
 

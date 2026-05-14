@@ -74,7 +74,7 @@ func newNvimCmd(g *Globals) *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := writerFor(g)
-			cli, _, err := resolveClient(g)
+			cli, socket, err := resolveClient(g)
 			if err != nil {
 				out.Error("%s", err)
 				return err
@@ -85,16 +85,24 @@ func newNvimCmd(g *Globals) *cobra.Command {
 				out.Error("%s", err)
 				return err
 			}
+			// Fetch context so the caller can verify the right nvim was targeted.
+			buf, cwd := nvimContext(cli)
 			if g.JSON {
 				out.JSON(map[string]any{
-					"schema": "guyide/v1",
-					"level":  "success",
+					"schema":  "guyide/v1",
+					"level":   "success",
 					"command": vimcmd,
-					"ok":     true,
+					"ok":      true,
+					"socket":  socket,
+					"buffer":  buf,
+					"cwd":     cwd,
 				})
 				return nil
 			}
 			out.Success("ran: %s", vimcmd)
+			out.KeyValue("socket", socket)
+			out.KeyValue("buffer", buf)
+			out.KeyValue("cwd", cwd)
 			return nil
 		},
 	})
@@ -104,7 +112,7 @@ func newNvimCmd(g *Globals) *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := writerFor(g)
-			cli, _, err := resolveClient(g)
+			cli, socket, err := resolveClient(g)
 			if err != nil {
 				out.Error("%s", err)
 				return err
@@ -116,22 +124,42 @@ func newNvimCmd(g *Globals) *cobra.Command {
 				out.Error("%s", err)
 				return err
 			}
+			buf, cwd := nvimContext(cli)
 			if g.JSON {
 				out.JSON(map[string]any{
 					"schema": "guyide/v1",
 					"level":  "info",
 					"expr":   expr,
 					"value":  val,
+					"socket": socket,
+					"buffer": buf,
+					"cwd":    cwd,
 				})
 				return nil
 			}
 			out.Header("guyide nvim eval")
 			out.KeyValue("expr", expr)
 			out.KeyValue("value", fmt.Sprintf("%v", val))
+			out.KeyValue("socket", socket)
+			out.KeyValue("buffer", buf)
+			out.KeyValue("cwd", cwd)
 			return nil
 		},
 	})
 	return c
+}
+
+// nvimContext fetches the current buffer path and cwd from nvim so the
+// caller (typically an AI agent) can verify they're talking to the right
+// instance. Errors are swallowed — this is best-effort context.
+func nvimContext(cli *gnvim.Client) (buffer, cwd string) {
+	if val, err := cli.Eval(`expand("%:p")`); err == nil {
+		buffer, _ = val.(string)
+	}
+	if val, err := cli.Eval(`getcwd()`); err == nil {
+		cwd, _ = val.(string)
+	}
+	return
 }
 
 func joinArgs(args []string) string {

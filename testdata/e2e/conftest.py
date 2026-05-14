@@ -320,6 +320,11 @@ def guyide_stack(
     xdg_state = tmp_path / "xdg-state"
     xdg_cache = tmp_path / "xdg-cache"
     runtime = tmp_path / "runtime"
+    # Unix sockets are limited to ~104 bytes on macOS. pytest tmp_path can
+    # easily exceed that, so place the nvim socket under /tmp instead.
+    short_runtime = Path(f"/tmp/guyide-e2e-{pid}-{int(time.time() * 1000) % 1_000_000}")
+    short_runtime.mkdir(parents=True, exist_ok=True)
+    short_runtime.chmod(0o700)
     for p in (runtime,):
         p.mkdir(parents=True)
     runtime.chmod(0o700)
@@ -365,7 +370,7 @@ def guyide_stack(
         f"export XDG_DATA_HOME='{xdg_data}'\n"
         f"export XDG_STATE_HOME='{xdg_state}'\n"
         f"export XDG_CACHE_HOME='{xdg_cache}'\n"
-        f"export XDG_RUNTIME_DIR='{runtime}'\n"
+        f"export XDG_RUNTIME_DIR='{short_runtime}'\n"
         f"{vscodium_export}"
         f"{debugpy_export}"
         f"cd '{workdir}'\n"
@@ -375,7 +380,7 @@ def guyide_stack(
     _tmux(sock_name, "new-session", "-d", "-s", session, "-x", "200", "-y", "50", str(wrapper))
 
     # Wait for nvim socket to appear and accept connections.
-    expected_sock = runtime / "nvim.guyide.0"
+    expected_sock = short_runtime / "nvim.guyide.0"
 
     def _sock_ready() -> bool:
         if not expected_sock.exists():
@@ -444,3 +449,4 @@ def guyide_stack(
     if os.environ.get("GUYIDE_E2E_KEEP"):
         return
     _tmux(sock_name, "kill-server", check=False)
+    shutil.rmtree(short_runtime, ignore_errors=True)

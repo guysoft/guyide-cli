@@ -97,6 +97,28 @@ guyide version
 Each command supports `--json`, `--no-color`, `--socket`, `--session`,
 `--timeout`, `-v/--verbose`.
 
+## Nvim context in responses
+
+Every `nvim exec` and `nvim eval` response includes the resolved `socket`,
+current `buffer` (full path), and `cwd` of the targeted nvim instance. This
+lets AI agents immediately detect when they are talking to the **wrong** nvim
+(e.g. a background headless instance) without having to run `guyide env`
+separately.
+
+Example JSON response from `guyide nvim exec "echo 1" --json`:
+
+```json
+{
+  "schema": "guyide/v1",
+  "level": "success",
+  "command": "echo 1",
+  "ok": true,
+  "socket": "/tmp/nvim-ide-0-2.sock",
+  "buffer": "/home/user/project/main.py",
+  "cwd": "/home/user/project"
+}
+```
+
 ## Phasing
 
 **Phase 1 (this branch, target v0.1.0):**
